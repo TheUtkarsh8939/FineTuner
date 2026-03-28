@@ -1,0 +1,28 @@
+
+{
+    "app":"demo/demo.exe",
+    "groups":[
+        {
+            "input":{
+                "group1var1":[1,10],
+                "group1var2":[5,15],
+                "group1var3":[5,15]
+            },
+            "result":{
+                "group1result1":"minimizer",
+                "group1result2":"maximizer"
+            }
+        },
+        {
+            "input":{
+                "group2var1":[1,10],
+                "group2var2":[5,15]
+            },
+            "result":{
+                "group2result1":"minimizer",
+                "group2result2":"maximizer"
+            }
+        }
+    ]
+}
+		
