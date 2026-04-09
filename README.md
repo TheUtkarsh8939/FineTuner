@@ -1,63 +1,35 @@
 # Finetuner
 
-Finetuner is a CLI tuning tool that runs a target program across all combinations of configured input ranges, evaluates configured result metrics, and returns the best input set per group.
+**DEMO VIDEO:** [Demo Video](https://youtu.be/qqJxVPGtGPI)
+I built this CLI tool to help me find the best parameters for programs by running them across a bunch of different input combinations. It tests every possibility, tracks which one works best, and gives you back the winner. The UI has a nice progress bar and shows live updates while it's running.
 
-The run UI uses Bubble Tea and shows a gradient progress bar with live status updates.
+## Quick Setup
 
-## Features
+Just grab the precompiled `Finetuner.exe` from the releases and you're good to go. No need to build anything.
 
-- Interactive `init` command to generate starter config files.
-- Exhaustive search across each group's input ranges.
-- Per-result optimization rules:
-  - `maximizer`: larger value is better
-  - `minimizer`: smaller value is better
-- Bubble Tea run UI with progress bar and automatic exit when tuning completes.
-- Final JSON summary of best inputs and results per group.
+## Usage
 
-## Requirements
+### 1) Grab a config
 
-- Go 1.24.2 or newer
-
-## Quick Start
-
-### 1) Build the bundled demo target (optional)
+Either generate a new one:
 
 ```powershell
-go build -o demo/demo.exe ./demo
+./Finetuner.exe init
 ```
 
-### 2) Create or edit a config
+Or make your own `config.json` manually.
 
-Generate a starter config:
+### 2) Run it
 
 ```powershell
-go run . init
+./Finetuner.exe run ./config.json
 ```
 
-Or create `config.json` manually.
+Done. It'll spit out the best inputs and results when it finishes.
 
-### 3) Run tuning
+## Config
 
-```powershell
-go run . run ./config.json
-```
-
-### 4) Build the tool binary
-
-```powershell
-go build -o finetuner.exe .
-```
-
-## Commands
-
-- `finetuner init`
-  - Opens an interactive picker and writes `config.json`.
-- `finetuner run <configPath>`
-  - Runs the tuner using the given config file path.
-- `finetuner help`
-  - Prints command help.
-
-## Config Format
+Here's what your `config.json` should look like:
 
 ```json
 {
@@ -77,42 +49,38 @@ go build -o finetuner.exe .
 }
 ```
 
-### Fields
+- `app`: path to your program
+- `groups`: different testing groups (they run independently)
+- `group.input`: variables and their min/max ranges
+- `group.result`: what you want to measure, and whether you want bigger numbers (`maximizer`) or smaller numbers (`minimizer`)
 
-- `app`: path to the program being tuned.
-- `groups`: list of independent tuning groups.
-- `group.input`: map of input name to inclusive range `[start, end]`.
-- `group.result`: map of result key to optimization mode (`maximizer` or `minimizer`).
+## How It Works
 
-## How Tuning Works
+For each group, here's what happens:
 
-For each group, Finetuner:
+1. I generate every possible combo of your input ranges
+2. Run your program with each combo
+3. Parse the JSON output
+4. Compare the results and figure out which combo was best
+5. Tell you the winner
 
-1. Generates the Cartesian product of all input ranges.
-2. Invokes the target program with flags in `--name value` form.
-3. Parses JSON output from the target program.
-4. Extracts only result keys declared in that group.
-5. Compares candidates using the configured maximize/minimize rules.
-6. Tracks and returns the best input/result combination for the group.
+Pretty straightforward stuff.
 
-Progress is sent to the UI on every program invocation.
+## Your Program
 
-## Target Program Contract
+Your program just needs to:
 
-The tuned application is expected to:
+- Accept inputs as command-line flags (like `--myvar 42`)
+- Print a JSON object to stdout with your results
+- Include all the result keys you defined in the config
 
-- Accept input values from CLI flags.
-- Print a JSON object to stdout.
-- Include all result keys required by the current group.
-- Emit numeric values for required result keys.
+Example of how I'll call your program:
 
-Example invocation from the tuner:
-
-```text
+```
 demo.exe --group2var1 10 --group2var2 15
 ```
 
-Example output from the tuned app:
+And it should output something like:
 
 ```json
 {
@@ -123,9 +91,9 @@ Example output from the tuned app:
 }
 ```
 
-## Output Summary
+## Output
 
-At completion, Finetuner prints JSON like:
+When everything's done, you get back a JSON file with the best results for each group:
 
 ```json
 [
@@ -143,8 +111,9 @@ At completion, Finetuner prints JSON like:
 ]
 ```
 
+That's it. Use those inputs and you're golden.
+
 ## Notes
 
-- Relative config paths are resolved from the current working directory.
-- Ensure `app` points to the actual executable location.
-  - Example: if using the bundled demo binary from project root, use `demo/demo.exe`.
+- Config paths are relative to where you run the command from
+- Make sure your `app` path points to the right place (e.g., `demo/demo.exe` if you're running from the project root)
